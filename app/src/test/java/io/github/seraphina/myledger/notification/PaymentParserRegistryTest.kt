@@ -50,6 +50,18 @@ class PaymentParserRegistryTest {
     }
 
     @Test
+    fun parsesWechatChangeDepositNotification() {
+        val payment = PaymentParserRegistry.parse(
+            CommonConfig.WECHAT_PACKAGE,
+            "微信支付",
+            "已存入零钱 25.00元"
+        )
+        assertNotNull(payment)
+        assertEquals(2500L, payment!!.amountCents)
+        assertEquals(RecordDirection.INCOME, payment.direction)
+    }
+
+    @Test
     fun parsesAlipayPaymentNotification() {
         val payment = PaymentParserRegistry.parse(
             CommonConfig.ALIPAY_PACKAGE,

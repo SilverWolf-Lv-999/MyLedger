@@ -13,5 +13,10 @@ data class LedgerUiState(
     val autoRecordEnabled: Boolean = true,
     val keepAliveEnabled: Boolean = true,
     val notificationAccessGranted: Boolean = false,
-    val batteryOptimizationIgnored: Boolean = false
+    val batteryOptimizationIgnored: Boolean = false,
+    val searchQuery: String = "",
+    val totalRecordCount: Int = 0,
+    val matchedRecordCount: Int = 0,
+    val hasMoreRecords: Boolean = false,
+    val dayExpenseTotals: Map<Long, Long> = emptyMap()
 )

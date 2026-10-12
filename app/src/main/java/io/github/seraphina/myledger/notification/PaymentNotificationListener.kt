@@ -1,6 +1,7 @@
 package io.github.seraphina.myledger.notification
 
 import android.app.Notification
+import android.content.ComponentName
 import android.os.Bundle
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -19,7 +20,14 @@ class PaymentNotificationListener : NotificationListenerService() {
 
     override fun onListenerConnected() {
         super.onListenerConnected()
+        NotificationDiagnostics.setConnected(true)
         LedgerKeepAliveService.start(this)
+    }
+
+    override fun onListenerDisconnected() {
+        NotificationDiagnostics.setConnected(false)
+        requestRebind(ComponentName(this, PaymentNotificationListener::class.java))
+        super.onListenerDisconnected()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {

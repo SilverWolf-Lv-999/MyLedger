@@ -18,6 +18,9 @@ interface LedgerRecordDao {
     @Query("DELETE FROM ${CommonConfig.RECORD_TABLE} WHERE id = :id")
     suspend fun deleteById(id: Long)
 
+    @Query("UPDATE ${CommonConfig.RECORD_TABLE} SET note = :note WHERE id = :id")
+    suspend fun updateNote(id: Long, note: String)
+
     @Query("DELETE FROM ${CommonConfig.RECORD_TABLE}")
     suspend fun deleteAll()
 

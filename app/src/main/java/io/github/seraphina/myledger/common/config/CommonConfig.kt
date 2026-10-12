@@ -13,7 +13,7 @@ object CommonConfig {
     const val ALIPAY_PACKAGE = "com.eg.android.AlipayGphone"
 
     val INCOME_KEYWORDS = listOf(
-        "收款", "到账", "收入", "收到", "转入", "退款", "退还", "返还", "入账", "红包"
+        "收款", "到账", "收入", "收到", "转入", "退款", "退还", "返还", "入账", "红包", "存入"
     )
 
     val EXPENSE_KEYWORDS = listOf(

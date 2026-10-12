@@ -11,6 +11,11 @@
     <string name="stat_income">收入</string>
     <string name="stat_expense">支出</string>
     <string name="records_empty">暂无记录</string>
+    <string name="search_hint">搜索金额、备注、时间、来源</string>
+    <string name="search_clear">清除搜索</string>
+    <string name="search_results_count">找到 %1$d 条记录</string>
+    <string name="search_empty">没有匹配的记录</string>
+    <string name="search_load_more">还有 %1$d 条</string>
     <string name="permission_title">未开启通知读取权限</string>
     <string name="permission_action">去授权</string>
     <string name="settings_section_balance">余额</string>
@@ -24,6 +29,16 @@
     <string name="settings_open_system">系统设置</string>
     <string name="settings_auto_record">自动记账</string>
     <string name="settings_auto_record_desc">读取微信、支付宝支付通知并自动增减余额</string>
+    <string name="settings_listener_state">监听状态</string>
+    <string name="settings_listener_connected">已连接，正在接收通知</string>
+    <string name="settings_listener_disconnected">未连接，系统可能已停止监听</string>
+    <string name="settings_listener_rebind">重新连接</string>
+    <string name="settings_recent_notifications">最近通知</string>
+    <string name="settings_recent_notifications_empty">本次启动后还没有收到微信或支付宝的通知</string>
+    <string name="notification_status_recorded">已记账</string>
+    <string name="notification_status_duplicate">重复通知</string>
+    <string name="notification_status_disabled">自动记账已关闭</string>
+    <string name="notification_status_unrecognized">未识别为支付</string>
     <string name="settings_section_background">后台运行</string>
     <string name="settings_keep_alive">后台常驻</string>
     <string name="settings_keep_alive_desc">常驻前台服务，划掉任务后自动恢复监听</string>
@@ -41,6 +56,8 @@
     <string name="dialog_record_detail_title">记录详情</string>
     <string name="field_amount">金额</string>
     <string name="field_note">备注</string>
+    <string name="field_time">时间</string>
+    <string name="time_format_invalid">格式：yyyy-MM-dd HH:mm:ss</string>
     <string name="direction_expense">支出</string>
     <string name="direction_income">收入</string>
     <string name="amount_invalid">请输入正确的金额</string>
@@ -49,9 +66,9 @@
     <string name="action_close">关闭</string>
     <string name="action_delete">删除</string>
     <string name="action_add_record">记一笔</string>
+    <string name="action_time_now">设为当前时间</string>
     <string name="detail_amount">金额</string>
     <string name="detail_type">类型</string>
     <string name="detail_source">来源</string>
     <string name="detail_time">时间</string>
-    <string name="detail_note">备注</string>
 </resources>

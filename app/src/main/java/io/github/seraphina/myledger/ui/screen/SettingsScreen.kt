@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -18,6 +19,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -25,12 +27,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.seraphina.myledger.R
+import io.github.seraphina.myledger.common.model.NotificationEvent
+import io.github.seraphina.myledger.common.model.NotificationEventStatus
+import io.github.seraphina.myledger.notification.NotificationDiagnostics
 import io.github.seraphina.myledger.service.LedgerKeepAliveService
 import io.github.seraphina.myledger.ui.component.InitialAmountDialog
 import io.github.seraphina.myledger.ui.state.LedgerUiState
 import io.github.seraphina.myledger.utility.AmountUtility
+import io.github.seraphina.myledger.utility.NotificationAccessUtility
+import io.github.seraphina.myledger.utility.TimeUtility
 
 @Composable
 fun SettingsScreen(
@@ -43,6 +51,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val listenerConnected by NotificationDiagnostics.connected.collectAsState()
+    val notificationEvents by NotificationDiagnostics.events.collectAsState()
     var showInitialAmountDialog by rememberSaveable { mutableStateOf(false) }
     var showClearDialog by rememberSaveable { mutableStateOf(false) }
     LazyColumn(
@@ -98,6 +108,37 @@ fun SettingsScreen(
                 }
             )
         }
+        item {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.settings_listener_state)) },
+                supportingContent = {
+                    Text(
+                        stringResource(
+                            if (listenerConnected) {
+                                R.string.settings_listener_connected
+                            } else {
+                                R.string.settings_listener_disconnected
+                            }
+                        )
+                    )
+                },
+                trailingContent = {
+                    TextButton(onClick = { NotificationAccessUtility.requestRebind(context) }) {
+                        Text(stringResource(R.string.settings_listener_rebind))
+                    }
+                }
+            )
+        }
+        item { SectionHeader(stringResource(R.string.settings_recent_notifications)) }
+        if (notificationEvents.isEmpty()) {
+            item {
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.settings_recent_notifications_empty)) }
+                )
+            }
+        } else {
+            items(items = notificationEvents) { event -> NotificationEventItem(event) }
+        }
         item { HorizontalDivider(Modifier.padding(horizontal = 16.dp)) }
         item { SectionHeader(stringResource(R.string.settings_section_background)) }
         item {
@@ -143,7 +184,7 @@ fun SettingsScreen(
         item {
             ListItem(
                 headlineContent = { Text(stringResource(R.string.settings_record_count)) },
-                trailingContent = { Text(uiState.records.size.toString()) }
+                trailingContent = { Text(uiState.totalRecordCount.toString()) }
             )
         }
         item {
@@ -197,6 +238,35 @@ fun SettingsScreen(
             }
         )
     }
+}
+
+@Composable
+private fun NotificationEventItem(event: NotificationEvent) {
+    ListItem(
+        headlineContent = {
+            Text(
+                text = event.title.ifBlank { event.source.label },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        },
+        supportingContent = {
+            Text(
+                text = TimeUtility.formatShort(event.timestamp) + " · " +
+                    stringResource(notificationStatusRes(event.status)) +
+                    if (event.content.isBlank()) "" else " · " + event.content,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    )
+}
+
+private fun notificationStatusRes(status: NotificationEventStatus): Int = when (status) {
+    NotificationEventStatus.RECORDED -> R.string.notification_status_recorded
+    NotificationEventStatus.DUPLICATE -> R.string.notification_status_duplicate
+    NotificationEventStatus.DISABLED -> R.string.notification_status_disabled
+    NotificationEventStatus.UNRECOGNIZED -> R.string.notification_status_unrecognized
 }
 
 @Composable

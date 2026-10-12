@@ -10,7 +10,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
 import android.provider.Settings
@@ -19,9 +21,22 @@ import androidx.core.content.ContextCompat
 import io.github.seraphina.myledger.MainActivity
 import io.github.seraphina.myledger.R
 import io.github.seraphina.myledger.common.config.CommonConfig
+import io.github.seraphina.myledger.notification.NotificationDiagnostics
 import io.github.seraphina.myledger.utility.NotificationAccessUtility
 
 class LedgerKeepAliveService : Service() {
+    private val handler = Handler(Looper.getMainLooper())
+    private val listenerWatchdog = object : Runnable {
+        override fun run() {
+            if (NotificationAccessUtility.isGranted(this@LedgerKeepAliveService) &&
+                !NotificationDiagnostics.connected.value
+            ) {
+                NotificationAccessUtility.requestRebind(this@LedgerKeepAliveService)
+            }
+            handler.postDelayed(this, 15 * 60 * 1000L)
+        }
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
@@ -36,6 +51,12 @@ class LedgerKeepAliveService : Service() {
                 )
             )
         }
+        handler.postDelayed(listenerWatchdog, 60 * 1000L)
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacks(listenerWatchdog)
+        super.onDestroy()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

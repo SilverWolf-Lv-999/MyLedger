@@ -67,7 +67,7 @@ class LedgerRepository(database: LedgerDatabase) {
     suspend fun isKeepAliveEnabled(): Boolean =
         settingsDao.find()?.keepAliveEnabled ?: ClientConfig.DEFAULT_KEEP_ALIVE_ENABLED
 
-    suspend fun addManualRecord(direction: RecordDirection, amountCents: Long, note: String) {
+    suspend fun addManualRecord(direction: RecordDirection, amountCents: Long, note: String, timestamp: Long) {
         recordDao.insert(
             LedgerRecordEntity(
                 direction = direction,
@@ -76,7 +76,7 @@ class LedgerRepository(database: LedgerDatabase) {
                 source = RecordSource.MANUAL,
                 note = note,
                 signature = ClientConfig.MANUAL_SIGNATURE,
-                timestamp = System.currentTimeMillis()
+                timestamp = timestamp
             )
         )
     }
@@ -95,6 +95,10 @@ class LedgerRepository(database: LedgerDatabase) {
             )
         )
         return true
+    }
+
+    suspend fun updateNote(id: Long, note: String) {
+        recordDao.updateNote(id, note)
     }
 
     suspend fun deleteRecord(id: Long) {

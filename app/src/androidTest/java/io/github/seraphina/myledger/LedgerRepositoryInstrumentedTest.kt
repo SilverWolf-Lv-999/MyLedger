@@ -6,10 +6,12 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.seraphina.myledger.common.config.CommonConfig
 import io.github.seraphina.myledger.common.model.ParsedPayment
+import io.github.seraphina.myledger.common.model.NotificationEventStatus
 import io.github.seraphina.myledger.common.model.RecordDirection
 import io.github.seraphina.myledger.common.model.RecordSource
 import io.github.seraphina.myledger.data.LedgerDatabase
 import io.github.seraphina.myledger.data.repository.LedgerRepository
+import io.github.seraphina.myledger.notification.NotificationDiagnostics
 import io.github.seraphina.myledger.notification.PaymentNotificationRecorder
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -28,7 +30,7 @@ class LedgerRepositoryInstrumentedTest {
         val repository = LedgerRepository(database)
 
         repository.setInitialAmount(10000L)
-        repository.addManualRecord(RecordDirection.EXPENSE, 2500L, "午餐")
+        repository.addManualRecord(RecordDirection.EXPENSE, 2500L, "午餐", System.currentTimeMillis())
         repository.recordPayment(
             ParsedPayment(RecordDirection.INCOME, 500L, "微信收款", RecordSource.WECHAT),
             "signature-1",
@@ -57,7 +59,7 @@ class LedgerRepositoryInstrumentedTest {
         val repository = LedgerRepository(database)
 
         repository.setInitialAmount(5000L)
-        repository.addManualRecord(RecordDirection.INCOME, 100L, "红包")
+        repository.addManualRecord(RecordDirection.INCOME, 100L, "红包", System.currentTimeMillis())
         repository.clearRecords()
 
         assertEquals(0, repository.observeRecords().first().size)
@@ -107,6 +109,67 @@ class LedgerRepositoryInstrumentedTest {
         assertEquals(2500L, records[0].amountCents)
         assertEquals(RecordDirection.EXPENSE, records[0].direction)
         assertEquals("微信支付", records[0].title)
+        database.close()
+    }
+
+    @Test
+    fun updatesNoteOfAutoRecordedPayment() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val database = Room.inMemoryDatabaseBuilder(context, LedgerDatabase::class.java).build()
+        val repository = LedgerRepository(database)
+        val recorder = PaymentNotificationRecorder(repository)
+
+        recorder.record(
+            CommonConfig.WECHAT_PACKAGE,
+            "微信支付",
+            "微信支付 已支付 ¥120.00",
+            System.currentTimeMillis()
+        )
+        val record = repository.observeRecords().first().first()
+        assertEquals("", record.note)
+
+        repository.updateNote(record.id, "话费充值")
+        assertEquals("话费充值", repository.observeRecords().first().first().note)
+        database.close()
+    }
+
+    @Test
+    fun keepsManualRecordTimestampExactToSecond() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val database = Room.inMemoryDatabaseBuilder(context, LedgerDatabase::class.java).build()
+        val repository = LedgerRepository(database)
+        val timestamp = System.currentTimeMillis() - 86_400_000L
+
+        repository.addManualRecord(RecordDirection.EXPENSE, 3000L, "", timestamp)
+        assertEquals(timestamp, repository.observeRecords().first().first().timestamp)
+        database.close()
+    }
+
+    @Test
+    fun logsNotificationDiagnosticsPerOutcome() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val database = Room.inMemoryDatabaseBuilder(context, LedgerDatabase::class.java).build()
+        val repository = LedgerRepository(database)
+        val recorder = PaymentNotificationRecorder(repository)
+        val timestamp = System.currentTimeMillis()
+
+        recorder.record(CommonConfig.WECHAT_PACKAGE, "微信支付", "已支付 ¥25.00", timestamp)
+        assertEquals(NotificationEventStatus.RECORDED, NotificationDiagnostics.events.value.first().status)
+
+        recorder.record(CommonConfig.WECHAT_PACKAGE, "微信支付", "已支付 ¥25.00", timestamp + 1000L)
+        assertEquals(NotificationEventStatus.DUPLICATE, NotificationDiagnostics.events.value.first().status)
+
+        recorder.record(CommonConfig.WECHAT_PACKAGE, "张三", "晚上一起吃饭", timestamp)
+        assertEquals(NotificationEventStatus.UNRECOGNIZED, NotificationDiagnostics.events.value.first().status)
+
+        val countBefore = NotificationDiagnostics.events.value.size
+        recorder.record("com.example.other", "微信支付", "已支付 ¥25.00", timestamp)
+        assertEquals(countBefore, NotificationDiagnostics.events.value.size)
+
+        repository.setAutoRecordEnabled(false)
+        recorder.record(CommonConfig.WECHAT_PACKAGE, "微信支付", "已支付 ¥30.00", timestamp + 2000L)
+        assertEquals(NotificationEventStatus.DISABLED, NotificationDiagnostics.events.value.first().status)
+
         database.close()
     }
 

@@ -6,4 +6,5 @@ object ClientConfig {
     const val MANUAL_RECORD_TITLE = "手动记账"
     const val DEFAULT_AUTO_RECORD_ENABLED = true
     const val DEFAULT_KEEP_ALIVE_ENABLED = true
+    const val RECORD_PAGE_SIZE = 30
 }

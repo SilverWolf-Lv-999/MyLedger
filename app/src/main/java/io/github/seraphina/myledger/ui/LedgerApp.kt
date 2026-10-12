@@ -102,6 +102,9 @@ fun LedgerApp(viewModel: LedgerViewModel) {
             LedgerScreen(
                 uiState = uiState,
                 onOpenNotificationSettings = { NotificationAccessUtility.openSettings(context) },
+                onSearchQueryChange = viewModel::setSearchQuery,
+                onLoadMoreRecords = viewModel::loadMoreRecords,
+                onUpdateRecordNote = viewModel::updateRecordNote,
                 onDeleteRecord = viewModel::deleteRecord,
                 modifier = Modifier.padding(innerPadding)
             )
@@ -131,8 +134,8 @@ fun LedgerApp(viewModel: LedgerViewModel) {
     if (showManualRecordDialog) {
         ManualRecordDialog(
             onDismiss = { showManualRecordDialog = false },
-            onConfirm = { direction, amountCents, note ->
-                viewModel.addManualRecord(direction, amountCents, note)
+            onConfirm = { direction, amountCents, note, timestamp ->
+                viewModel.addManualRecord(direction, amountCents, note, timestamp)
                 showManualRecordDialog = false
             }
         )

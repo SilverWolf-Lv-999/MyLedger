@@ -6,9 +6,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -25,9 +30,11 @@ import io.github.seraphina.myledger.utility.TimeUtility
 fun RecordDetailDialog(
     record: LedgerRecord,
     onDismiss: () -> Unit,
+    onSaveNote: (String) -> Unit,
     onDelete: () -> Unit
 ) {
     val isIncome = record.direction == RecordDirection.INCOME
+    var note by rememberSaveable(record.id) { mutableStateOf(record.note) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.dialog_record_detail_title)) },
@@ -50,22 +57,31 @@ fun RecordDetailDialog(
                     label = stringResource(R.string.detail_time),
                     value = TimeUtility.formatFull(record.timestamp)
                 )
-                if (record.note.isNotBlank()) {
-                    DetailRow(
-                        label = stringResource(R.string.detail_note),
-                        value = record.note
-                    )
-                }
+                OutlinedTextField(
+                    value = note,
+                    onValueChange = { input -> note = input.take(40) },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text(stringResource(R.string.field_note)) },
+                    singleLine = true
+                )
             }
         },
         confirmButton = {
-            TextButton(onClick = onDelete) {
-                Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
+            Row {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.action_close))
+                }
+                TextButton(
+                    onClick = { onSaveNote(note.trim()) },
+                    enabled = note.trim() != record.note
+                ) {
+                    Text(stringResource(R.string.action_save))
+                }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.action_close))
+            TextButton(onClick = onDelete) {
+                Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
             }
         }
     )
